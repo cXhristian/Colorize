@@ -1,0 +1,13 @@
+name: Colorize
+main: com.cxhristian.colorize.Colorize
+version: 0.1
+commands:
+    randomcolor:
+        description: Changes chat name into a random color
+        usage: /<command>
+    setcolor:
+        description: Changes chat name into a given color
+        usage: /<command> (0-9 a-f)
+    listcolors:
+        description: Lists all available colors
+        usage: /<command>
