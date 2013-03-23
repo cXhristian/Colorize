@@ -14,15 +14,15 @@ import lib.PatPeter.SQLibrary.*;
 import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class Colorize extends JavaPlugin {
 
 	private Random randomGenerator;
-	public Logger log;
 	public String logPrefix = "[COLORIZE] ";
 	public SQLite sqlite;
 	public File folder = new File("plugins" + File.separator + "Colorize");
@@ -30,19 +30,20 @@ public final class Colorize extends JavaPlugin {
 	@Override
 	public void onEnable(){
 		this.randomGenerator = new Random();
-		this.log = Logger.getLogger("Minecraft");
 
-		this.sqlite = new SQLite(this.log, this.logPrefix, "Colorize", this.folder.getPath());
+		this.sqlite = new SQLite(getLogger(), this.logPrefix, this.folder.getPath(), "Colorize");
 		// Initialize SQLite handler
-		try {
+		if (!this.sqlite.isOpen()) {
 			this.sqlite.open();
-		} catch (SQLException e) {
-			e.printStackTrace();
 		}
-		if (!this.sqlite.checkTable("players")) {
-			this.log.info(this.logPrefix + "Creating table players");
+		if (!this.sqlite.isTable("players")) {
+			this.getLogger().info("Creating table players");
 			String query = "CREATE TABLE players (name VARCHAR(255) PRIMARY KEY, color VARCHAR(10));";
-			this.sqlite.createTable(query);
+			try {
+				this.sqlite.query(query);
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 		// Event listener
 		getServer().getPluginManager().registerEvents(new Listener() {
@@ -56,11 +57,15 @@ public final class Colorize extends JavaPlugin {
 
 
 				// Checking for db entry, if so use that color
-				ResultSet result = sqlite.query("SELECT * FROM players WHERE name='" + player.getName() + "'");
+				ResultSet result = null;
+				try {
+					result = sqlite.query("SELECT * FROM players WHERE name='" + player.getName() + "'");
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 				try {
 					if (result != null && result.next()) {
 						color = ChatColor.getByChar(result.getString("color"));
-
 					}
 				}
 				catch (SQLException e) {
@@ -137,13 +142,21 @@ public final class Colorize extends JavaPlugin {
 
 	@Override
 	public void onDisable() {
-		// TODO Insert logic to be performed when the plugin is disabled
+		sqlite.close();
+	}
+
+	private void log(String str) {
+		getLogger().info(str);
 	}
 
 	private void saveColor(Player player, ChatColor color) {
-		this.log.info(this.logPrefix + "Saving color");
+		log("Saving color");
 		// Save to db
-		sqlite.query("INSERT OR REPLACE INTO players (name, color) VALUES ('" + player.getName() + "', '" + color.getChar() + "')");
+		try {
+			sqlite.query("INSERT OR REPLACE INTO players (name, color) VALUES ('" + player.getName() + "', '" + color.getChar() + "')");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 		this.setColor(player, color);
 	}
 
