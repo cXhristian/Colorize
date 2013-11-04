@@ -1,6 +1,7 @@
 name: Colorize
 main: com.cxhristian.colorize.Colorize
-version: 0.1
+version: 1.0
+database: true
 commands:
     randomcolor:
         description: Changes chat name into a random color
